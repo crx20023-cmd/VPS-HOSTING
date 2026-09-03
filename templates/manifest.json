@@ -1,0 +1,30 @@
+[
+ {
+  "id": "ptb",
+  "name": "python-telegram-bot (python)",
+  "type": "python",
+  "entrypoint": "main.py",
+  "description": "PTB v22 — pure-python, fast install, polling. Add BOT_TOKEN env."
+ },
+ {
+  "id": "pyrogram",
+  "name": "Pyrogram bot (python)",
+  "type": "python",
+  "entrypoint": "main.py",
+  "description": "MTProto bot — sessions persist in app folder. Add BOT_TOKEN env (API_ID/API_HASH optional)."
+ },
+ {
+  "id": "telethon",
+  "name": "Telethon bot (python)",
+  "type": "python",
+  "entrypoint": "main.py",
+  "description": "MTProto client/bot — userbots too. Add BOT_TOKEN env (API_ID/API_HASH optional)."
+ },
+ {
+  "id": "grammy",
+  "name": "grammY bot (node)",
+  "type": "node",
+  "entrypoint": "main.js",
+  "description": "Modern Node.js bot framework — polling, /start + echo ready. Add BOT_TOKEN env."
+ }
+]

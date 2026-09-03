@@ -1,0 +1,8 @@
+{
+  "name": "grammy-bot",
+  "version": "1.0.0",
+  "main": "main.js",
+  "dependencies": {
+    "grammy": "^1.30.0"
+  }
+}

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VPS-PANEL — Login</title>
+<link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body class="login-body">
+<div class="login-wrap">
+    <div class="login-card">
+        <div class="login-logo">VPS<span>-</span>PANEL</div>
+        <p class="login-sub">Multi-Language Hosting Panel<br>python · node · php · static</p>
+        <form id="login-form" autocomplete="off">
+            <div class="form-group">
+                <label>USERNAME</label>
+                <input type="text" id="login-username" class="form-control" placeholder="admin" required autofocus>
+            </div>
+            <div class="form-group">
+                <label>PASSWORD</label>
+                <input type="password" id="login-password" class="form-control" placeholder="••••••••" required>
+            </div>
+            <div id="login-error" class="login-error" style="display:none;"></div>
+            <button type="submit" class="btn btn-primary btn-block" id="login-btn">LOGIN</button>
+        </form>
+        <button type="button" class="btn btn-secondary btn-block" id="register-toggle" style="margin-top:0.6rem;">REGISTER NEW ACCOUNT</button>
+        <form id="register-form" style="display:none; margin-top:1rem;" autocomplete="off">
+            <div class="form-group">
+                <label>USERNAME (3-32 chars: a-z 0-9 . _ -)</label>
+                <input type="text" id="reg-username" class="form-control" placeholder="newuser">
+            </div>
+            <div class="form-group">
+                <label>PASSWORD (min 6 chars)</label>
+                <input type="password" id="reg-password" class="form-control" placeholder="••••••••">
+            </div>
+            <button type="submit" class="btn btn-accent btn-block">REQUEST ACCESS</button>
+        </form>
+    </div>
+    <div class="login-foot">security: CSRF · rate-limit · PBKDF2 · sandboxed runtimes</div>
+</div>
+<script src="/static/js/login.js"></script>
+</body>
+</html>

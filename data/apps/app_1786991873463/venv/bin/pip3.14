@@ -1,0 +1,6 @@
+#!/data/data/com.termux/files/home/hosting-work/vpspanel/data/apps/app_1786991873463/venv/bin/python3
+import sys
+from pip._internal.cli.main import main
+if __name__ == '__main__':
+    sys.argv[0] = sys.argv[0].removesuffix('.exe')
+    sys.exit(main())

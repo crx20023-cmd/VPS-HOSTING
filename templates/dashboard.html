@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VPS-PANEL</title>
+<link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+<div class="app-shell">
+    <!-- TOP BAR -->
+    <header class="topbar">
+        <div class="topbar-left">
+            <span class="logo">VPS<span>-</span>PANEL</span>
+            <span class="topbar-host" id="host-stats">…</span>
+        </div>
+        <div class="topbar-right">
+            <span id="user-badge" class="user-badge">…</span>
+            <button class="btn btn-secondary btn-sm" onclick="location.href='/logout'">LOGOUT</button>
+        </div>
+    </header>
+
+    <div class="main-layout">
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <button class="side-btn active" id="sb-apps" onclick="showView('apps')">📦 Apps</button>
+            <button class="side-btn" id="sb-admin" onclick="showView('admin')" style="display:none;">🛡 Admin</button>
+            <button class="side-btn" id="sb-settings" onclick="openHelp()" style="margin-top:auto;">❓ Bot Guide</button>
+        </aside>
+
+        <!-- CONTENT -->
+        <main class="content">
+            <!-- ============ APPS VIEW ============ -->
+            <div id="view-apps" class="view">
+                <div class="view-head">
+                    <h2>My Applications</h2>
+                    <button class="btn btn-primary" onclick="openNewAppModal()">+ NEW APP</button>
+                </div>
+                <div class="stats-row">
+                    <div class="stat-card"><span class="stat-num" id="st-total">0</span><span class="stat-label">apps</span></div>
+                    <div class="stat-card"><span class="stat-num" id="st-running">0</span><span class="stat-label">running</span></div>
+                    <div class="stat-card"><span class="stat-num" id="st-ram">0</span><span class="stat-label">MB RAM</span></div>
+                    <div class="stat-card"><span class="stat-num" id="st-cpu">0</span><span class="stat-label">% CPU</span></div>
+                    <div class="stat-card"><span class="stat-num" id="st-disk">0</span><span class="stat-label">MB disk</span></div>
+                </div>
+                <div id="apps-grid" class="apps-grid"></div>
+            </div>
+
+            <!-- ============ WORKSPACE VIEW ============ -->
+            <div id="view-workspace" class="view" style="display:none;">
+                <div class="view-head">
+                    <div>
+                        <button class="btn btn-secondary btn-sm" onclick="showView('apps')">← Back</button>
+                        <h2 id="ws-name" style="display:inline-block; margin-left:0.8rem;">App</h2>
+                        <span id="ws-status" class="status-badge">stopped</span>
+                        <span id="ws-type" class="type-badge">python</span>
+                    </div>
+                                        <div class="ws-actions">
+                        <button class="btn btn-primary btn-sm" id="ws-start" onclick="controlApp('start')">▶ START</button>
+                        <button class="btn btn-danger btn-sm" id="ws-stop" style="display:none;" onclick="controlApp('stop')">■ STOP</button>
+                        <button class="btn btn-secondary btn-sm" onclick="controlApp('restart')">↻ RESTART</button>
+                        <button class="btn btn-secondary btn-sm" onclick="exportApp()">⬇ EXPORT</button>
+                        <a class="btn btn-accent btn-sm" id="ws-open" href="#" target="_blank" rel="noopener" style="display:none;">OPEN ↗</a>
+                        <label class="switch-line" style="margin:0 0.4rem;" title="Restart app automatically when its files change (dev mode)">
+                            <input type="checkbox" id="ws-devmode" onchange="setDevMode(this.checked)"><span style="font-size:0.7rem;">DEV</span>
+                        </label>
+                        <button class="btn btn-danger btn-sm" onclick="deleteApp()">✕</button>
+                    </div>
+                </div>
+
+                <div id="ws-alias-box" class="alias-box" style="display:none;">
+                    <span>Short URL:</span>
+                    <input id="ws-alias-input" class="form-control" placeholder="my-alias" style="width:160px;" maxlength="32">
+                    <button class="btn btn-secondary btn-sm" onclick="saveAlias()">SAVE</button>
+                    <a id="ws-alias-url" class="alias-url" href="#" target="_blank"></a>
+                </div>
+
+                <div class="ws-tabs">
+                    <button class="ws-tab active" data-tab="metrics" onclick="wsTab('metrics')">MONITOR</button>
+                    <button class="ws-tab" data-tab="files" onclick="wsTab('files')">FILES</button>
+                    <button class="ws-tab" data-tab="terminal" onclick="wsTab('terminal')">TERMINAL</button>
+                    <button class="ws-tab" data-tab="logs" onclick="wsTab('logs')">LOGS</button>
+                    <button class="ws-tab" data-tab="env" onclick="wsTab('env')">ENV</button>
+                    <button class="ws-tab" data-tab="cron" onclick="wsTab('cron')">CRON</button>
+                    <button class="ws-tab" data-tab="snapshots" onclick="wsTab('snapshots')">SNAPSHOTS</button>
+                </div>
+
+                <!-- MONITOR -->
+                <div class="ws-panel" id="ws-metrics">
+                    <div class="metric-cards">
+                        <div class="metric-card"><span class="m-num" id="m-ram">0</span><span class="m-label">RAM MB</span></div>
+                        <div class="metric-card"><span class="m-num" id="m-cpu">0</span><span class="m-label">CPU %</span></div>
+                        <div class="metric-card"><span class="m-num" id="m-up">0</span><span class="m-label">UPTIME s</span></div>
+                        <div class="metric-card"><span class="m-num" id="m-req">0</span><span class="m-label">REQUESTS</span></div>
+                        <div class="metric-card"><span class="m-num" id="m-bytes">0</span><span class="m-label">BYTES</span></div>
+                    </div>
+                    <div class="monitor-line" id="m-proc" style="font-size:0.8rem; color:var(--muted); margin-bottom:0.5rem;">process: —</div>
+                    <div class="chart-row">
+                        <canvas id="chart-cpu" height="140"></canvas>
+                        <canvas id="chart-ram" height="140"></canvas>
+                    </div>
+                    <div class="monitor-log" id="monitor-events"></div>
+                </div>
+
+                <!-- FILES -->
+                <div class="ws-panel" id="ws-files" style="display:none;">
+                    <div class="files-head">
+                        <div class="breadcrumb" id="file-breadcrumb">/</div>
+                        <div style="display:flex; gap:0.5rem;">
+                            <button class="btn btn-secondary btn-sm" onclick="promptCreateItem()">+ FILE</button>
+                            <button class="btn btn-secondary btn-sm" onclick="promptCreateItem(true)">+ FOLDER</button>
+                            <label class="btn btn-secondary btn-sm" style="cursor:pointer;">⬆ UPLOAD<input type="file" id="file-upload-input" style="display:none;" onchange="uploadFile()"></label>
+                            <label class="btn btn-secondary btn-sm" style="cursor:pointer;">📦 UNZIP<input type="file" id="file-unzip-input" style="display:none;" onchange="unzipFile()"></label>
+                        </div>
+                    </div>
+                    <div id="file-tree" class="file-tree"></div>
+                    <div id="file-editor-wrap" style="display:none;">
+                        <div class="editor-head">
+                            <span id="file-editor-path" class="editor-path"></span>
+                            <button class="btn btn-accent btn-sm" onclick="saveFile()">SAVE</button>
+                        </div>
+                        <textarea id="file-editor" class="editor-area" spellcheck="false"></textarea>
+                    </div>
+                </div>
+
+                <!-- TERMINAL -->
+                <div class="ws-panel" id="ws-terminal" style="display:none;">
+                    <div class="term-head">
+                        <span>sandbox shell — <span id="term-app"></span></span>
+                        <button class="btn btn-secondary btn-sm" onclick="termClose()">CLOSE</button>
+                    </div>
+                    <div class="term-body" id="term-body"></div>
+                </div>
+
+                <!-- LOGS -->
+                <div class="ws-panel" id="ws-logs" style="display:none;">
+                    <div class="logs-head">
+                        <input class="form-control" id="log-search" placeholder="search…" style="width:200px;" onkeydown="if(event.key==='Enter')loadLogs()">
+                        <button class="btn btn-secondary btn-sm" onclick="loadLogs()">SEARCH</button>
+                        <button class="btn btn-secondary btn-sm" onclick="loadLogs(false)">REFRESH</button>
+                        <a class="btn btn-secondary btn-sm" id="log-download" href="#">⬇ DOWNLOAD</a>
+                    </div>
+                    <pre class="logs-body" id="logs-body">…</pre>
+                </div>
+
+                <!-- ENV -->
+                <div class="ws-panel" id="ws-env" style="display:none;">
+                    <div class="env-head">
+                        <span>Environment variables (JSON). Restart app to apply.</span>
+                        <button class="btn btn-accent btn-sm" onclick="saveEnv()">SAVE ENV</button>
+                    </div>
+                    <textarea id="env-editor" class="editor-area" spellcheck="false" style="height:300px;"></textarea>
+                </div>
+
+                <!-- CRON -->
+                <div class="ws-panel" id="ws-cron" style="display:none;">
+                    <div class="files-head">
+                        <div style="display:flex; gap:0.4rem; flex-wrap:wrap;">
+                            <input class="form-control" id="cron-name" placeholder="job name" style="width:120px;">
+                            <input class="form-control" id="cron-sched" placeholder="*/5 * * * *" value="*/5 * * * *" style="width:120px;" title="5 fields: min hour dom mon dow">
+                            <input class="form-control" id="cron-cmd" placeholder="command (e.g. echo hi >> out.txt)" style="flex:1; min-width:180px;">
+                            <button class="btn btn-primary btn-sm" onclick="addCron()">+ ADD CRON</button>
+                        </div>
+                    </div>
+                    <div class="cron-hint" style="font-size:0.75rem; color:var(--muted); margin:0.2rem 0 0.6rem;">
+                        cron syntax — 5 fields (min hour dom mon dow). Examples: <code>*/5 * * * *</code> every 5 min ·
+                        <code>0 */2 * * *</code> every 2 hours · <code>0 9 * * 1-5</code> weekdays 09:00. Output is appended to app log.
+                    </div>
+                    <div id="cron-list" class="file-tree"></div>
+                </div>
+
+                <!-- SNAPSHOTS -->
+                <div class="ws-panel" id="ws-snapshots" style="display:none;">
+                    <div class="files-head">
+                        <span>Full copy of app files (venv excluded). Restore replaces files &amp; restarts app.</span>
+                        <button class="btn btn-primary btn-sm" onclick="createSnapshot()">📸 SNAPSHOT NOW</button>
+                    </div>
+                    <div id="snapshot-list" class="file-tree"></div>
+                </div>
+            </div>
+
+            <!-- ============ ADMIN VIEW ============ -->
+            <div id="view-admin" class="view" style="display:none;">
+                <div class="view-head"><h2>Admin Panel</h2></div>
+                <div class="admin-section">
+                    <h3>[ Users & Quotas ]</h3>
+                    <div class="table-wrap">
+                        <table class="dtable">
+                            <thead><tr>
+                                <th>Username</th><th>Role</th><th>Status</th><th>Apps</th>
+                                <th>Quota (RAM/CPU/Disk)</th><th>Usage</th><th>Actions</th>
+                            </tr></thead>
+                            <tbody id="admin-users-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="admin-section">
+                    <h3>[ Hoster Settings ]</h3>
+                    <div class="settings-grid">
+                        <label class="switch-line"><input type="checkbox" id="set-auto-approve"><span>Auto-approve registrations</span></label>
+                        <div class="form-group"><label>Default RAM (MB)</label><input class="form-control" id="set-ram" type="number" min="64"></div>
+                        <div class="form-group"><label>Default CPU (%)</label><input class="form-control" id="set-cpu" type="number" min="1" max="100"></div>
+                        <div class="form-group"><label>Default Disk (MB)</label><input class="form-control" id="set-disk" type="number" min="64"></div>
+                        <div class="form-group"><label>Alert Bot Token</label><input class="form-control" id="set-notify-token" type="password"></div>
+                        <div class="form-group"><label>Alert Chat ID</label><input class="form-control" id="set-notify-chat"></div>
+                        <div class="form-group"><label>Panel Name</label><input class="form-control" id="set-panel-name"></div>
+                        <button class="btn btn-primary" onclick="saveSettings()">SAVE SETTINGS</button>
+                        <button class="btn btn-secondary" onclick="testAlert()">📨 TEST NOTIFICATION</button>
+                        <button class="btn btn-secondary" onclick="downloadBackup()">⬇ PANEL BACKUP</button>
+                    </div>
+                </div>
+                <div class="admin-section">
+                    <h3>[ System Stats ] <span style="font-size:0.75rem; color:var(--muted);">(live — refreshes every 3s)</span></h3>
+                    <div class="metric-cards" style="margin-bottom:0.6rem;">
+                        <div class="metric-card"><span class="m-num" id="as-mem">0</span><span class="m-label">HOST RAM %</span></div>
+                        <div class="metric-card"><span class="m-num" id="as-disk">0</span><span class="m-label">DISK %</span></div>
+                        <div class="metric-card"><span class="m-num" id="as-cpu">0</span><span class="m-label">HOST CPU %</span></div>
+                        <div class="metric-card"><span class="m-num" id="as-procs">0</span><span class="m-label">APP PROCS</span></div>
+                    </div>
+                    <div class="table-wrap">
+                        <table class="dtable">
+                            <thead><tr><th>PID</th><th>App</th><th>CPU %</th><th>RAM MB</th><th>Uptime</th><th>Command</th></tr></thead>
+                            <tbody id="admin-procs-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="admin-section">
+                    <h3>[ API Tokens ] <span style="font-size:0.75rem; color:var(--muted);">— for CI/CD: curl with <code>X-API-Token</code> header, no CSRF needed</span></h3>
+                    <div class="files-head">
+                        <span style="color:var(--muted); font-size:0.8rem;">Token shown once. Revoked tokens die instantly.</span>
+                        <button class="btn btn-primary btn-sm" onclick="createToken()">+ NEW TOKEN</button>
+                    </div>
+                    <div class="table-wrap">
+                        <table class="dtable">
+                            <thead><tr><th>Label</th><th>Token</th><th>Created</th><th>Last used</th><th>Actions</th></tr></thead>
+                            <tbody id="token-list-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="admin-section">
+                    <h3>[ Change Password ]</h3>
+                    <div class="settings-grid">
+                        <div class="form-group"><label>New Password (min 6)</label><input class="form-control" id="set-new-pass" type="password"></div>
+                        <button class="btn btn-accent" onclick="changePass()">CHANGE</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- NEW APP MODAL -->
+<div class="modal-overlay" id="newapp-modal" style="display:none;">
+    <div class="modal-box">
+        <div class="modal-head"><h3>DEPLOY NEW APP</h3><button class="modal-x" onclick="closeNewAppModal()">✕</button></div>
+        <div class="modal-body">
+            <div class="form-group"><label>Name</label><input class="form-control" id="na-name" placeholder="my-app"></div>
+            <div class="form-group"><label>Type</label>
+                <select class="form-control" id="na-type" onchange="typeChanged()">
+                    <option value="static">static — HTML/JS/CSS (direct file serve)</option>
+                    <option value="python" selected>python — venv + pip</option>
+                    <option value="node">node — npm + node</option>
+                    <option value="php">php — php -S built-in server</option>
+                </select>
+            </div>
+            <div class="form-group" id="na-entry-wrap"><label>Entrypoint (file name only)</label><input class="form-control" id="na-entry" placeholder="bot.py / app.js"></div>
+<div class="form-group"><label>Source</label>
+                <select class="form-control" id="na-source" onchange="sourceChanged()">
+                    <option value="paste">📝 Paste code</option>
+                    <option value="template">🤖 Bot Template (one-click)</option>
+                    <option value="zip">📦 ZIP upload</option>
+                    <option value="git">🌐 Git clone</option>
+                </select>
+            </div>
+            <div class="form-group" id="na-template-wrap" style="display:none;"><label>Template</label>
+                <select class="form-control" id="na-template" onchange="templateChanged()"><option>loading…</option></select>
+            </div>
+            <div class="form-group" id="na-paste-wrap"><label>Code</label><textarea class="editor-area" id="na-paste" style="height:180px;" placeholder="// paste code here…"></textarea></div>
+            <div class="form-group" id="na-zip-wrap" style="display:none;"><label>ZIP file</label><input type="file" id="na-zip" class="form-control"></div>
+            <div class="form-group" id="na-git-wrap" style="display:none;"><label>Git URL</label><input class="form-control" id="na-git-url" placeholder="https://github.com/user/repo.git">
+            <label style="margin-top:0.4rem;">Branch</label><input class="form-control" id="na-git-branch" value="main"></div>
+            <div class="form-group"><label>Env vars (JSON)</label><textarea class="editor-area" id="na-env" style="height:90px;" spellcheck="false">{}</textarea></div>
+            <div class="form-group"><label>Short alias (optional — /p/alias/)</label><input class="form-control" id="na-alias" placeholder="my-alias"></div>
+            <label class="switch-line"><input type="checkbox" id="na-autorestart" checked><span>Auto-restart on crash</span></label>
+            <div id="na-error" class="login-error" style="display:none;"></div>
+        </div>
+        <div class="modal-foot"><button class="btn btn-secondary" onclick="closeNewAppModal()">CANCEL</button><button class="btn btn-primary" onclick="createApp()">DEPLOY</button></div>
+    </div>
+</div>
+
+<!-- USER QUOTA MODAL -->
+<div class="modal-overlay" id="quota-modal" style="display:none;">
+    <div class="modal-box">
+        <div class="modal-head"><h3 id="quota-title">User Quota</h3><button class="modal-x" onclick="closeQuotaModal()">✕</button></div>
+        <div class="modal-body">
+            <div id="quota-usage" class="usage-line"></div>
+            <div class="settings-grid">
+                <div class="form-group"><label>App Limit</label><input class="form-control" id="q-limit" type="number" min="0"></div>
+                <div class="form-group"><label>RAM (MB)</label><input class="form-control" id="q-ram" type="number" min="0"></div>
+                <div class="form-group"><label>CPU (%)</label><input class="form-control" id="q-cpu" type="number" min="0" max="100"></div>
+                <div class="form-group"><label>Disk (MB)</label><input class="form-control" id="q-disk" type="number" min="0"></div>
+            </div>
+        </div>
+        <div class="modal-foot"><button class="btn btn-secondary" onclick="closeQuotaModal()">CANCEL</button><button class="btn btn-accent" onclick="saveQuota()">SAVE QUOTA</button></div>
+    </div>
+</div>
+
+<!-- BOT HOSTING GUIDE MODAL -->
+<div class="modal-overlay" id="help-modal" style="display:none;">
+    <div class="modal-box" style="max-width:720px;">
+        <div class="modal-head"><h3>🤖 Telegram Bot Hosting Guide</h3><button class="modal-x" onclick="closeHelp()">✕</button></div>
+        <div class="modal-body" style="font-size:0.85rem; line-height:1.6;">
+            <h4 style="margin:0.6rem 0 0.2rem;">🚀 1. Deploy a bot in 60 seconds</h4>
+            <p style="margin:0 0 0.6rem;">DEPLOY NEW APP → Source: <b>📦 Bot Template</b> → pick PTB / pyrogram / telethon / grammY →
+            ENV tab → add <code>BOT_TOKEN = &lt;token from @BotFather&gt;</code> → START. That's it — long-polling, no webhook needed.</p>
+
+            <h4 style="margin:0.6rem 0 0.2rem;">📶 2. Webhook or polling?</h4>
+            <p style="margin:0 0 0.6rem;">Use <b>polling</b> (default in all templates). Webhooks need a <b>public HTTPS URL</b> —
+            this panel runs plain HTTP on your device, so Telegram will reject webhook URLs. If you must use webhooks,
+            put a Cloudflare tunnel / reverse proxy in front and set the webhook URL to your tunnel.</p>
+
+            <h4 style="margin:0.6rem 0 0.2rem;">🔁 3. Keep the bot alive</h4>
+            <p style="margin:0 0 0.6rem;">Tick <b>Auto-restart on crash</b> (on by default) — the panel respawns the bot within seconds.
+            <b>Dev mode</b> (top of the app screen) auto-restarts on every file save — perfect while coding.
+            Add a cron job if the bot needs to do something on a schedule.</p>
+
+            <h4 style="margin:0.6rem 0 0.2rem;">🛡 4. Bots &amp; sessions</h4>
+            <p style="margin:0 0 0.6rem;">Pyrogram/Telethon sessions are stored in the app folder — they survive restarts
+            and are included in <b>snapshots</b>. Quota stops runaway bots (RAM/CPU). Crash alerts go to your Telegram
+            if you set Alert Bot Token/Chat ID in Admin → Hoster Settings and press <b>TEST NOTIFICATION</b>.</p>
+
+            <h4 style="margin:0.6rem 0 0.2rem;">💾 5. Backups</h4>
+            <p style="margin:0 0 0.6rem;">SNAPSHOTS tab = instant app backup + restore. Admin → PANEL BACKUP downloads the whole panel
+            (apps, DB, logs). Logs auto-rotate at 5MB so disk never fills up.</p>
+        </div>
+    </div>
+</div>
+
+<script src="/static/js/app.js"></script>
+</body>
+</html>
